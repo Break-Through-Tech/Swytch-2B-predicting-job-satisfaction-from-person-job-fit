@@ -2,3 +2,4 @@ data/
 # VS Code / IDE settings
 .vscode/
 .idea/
+.DS_Store

@@ -50,4 +50,16 @@ def filter_gss(start_year: int = 2016, end_year: int = 2024) -> None:
 
 
 if __name__ == "__main__":
-    filter_gss()
+    # filter_gss()
+    selected_cols = [
+    "YEAR", "ID_", "WRKSTAT", "SATJOB", "REALINC", 
+    "OCC10", "OCC20", "JOBINC", "JOBSEC", "JOBMEANS"
+    ]
+
+    # Read only these columns off disk
+    df_subset = pd.read_parquet(
+        "data/interim/gss_2016_2024_all_cols.parquet",
+        columns=selected_cols
+    )
+
+    df_subset.head()

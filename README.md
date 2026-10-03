@@ -1,4 +1,4 @@
-# AI Studio Challenge Project Title
+# Swytch: Predicting Job Satisfaction Through Person-Job Fit
 
 > 💡 **Note for the team:** This is just a template. Update the above title with your AI Studio Challenge Project name. Remove all guidance notes and example text in this template and populate this README with your own content. You can work on this README throughout AI Studio, and get feedback from your AI Studio Coach and Challenge Advisor before finalizing it.  
 
@@ -49,11 +49,13 @@ Emails
 
 ## 🏗️ **Project Overview**
 
-**Describe:**
+## Describe
 
-- How this project is connected to the Break Through Tech AI Program
-- Your AI Studio host company and the project objective and scope
-- The real-world significance of the problem and the potential impact of your work
+This project is part of the Break Through Tech AI Program and was completed through the AI Studio, where we work with an industry partner to apply machine learning to a real world problem.
+
+Our AI Studio host company is **Swytch**. The objective of this project is to predict job satisfaction using survey and occupational data, with a particular focus on **person job fit**, which is essentially how well an individual's work values and preferences align with the characteristics of their occupation. We are exploring data from sources such as the General Social Survey (GSS), Gallup, and O*NET to develop features and machine learning models that can help predict job satisfaction.
+
+Job satisfaction can affect employee well being and engagement, which makes it a meaningful problem for both individuals and organizations. By investigating whether person job fit can improve predictions of job satisfaction beyond basic demographic and workplace factors, this project could provide insight into how the better alignment of workers and occupations can be identified and understood.
 
 ---
 

@@ -49,8 +49,6 @@ Emails
 
 ## 🏗️ **Project Overview**
 
-## Describe
-
 This project is part of the Break Through Tech AI Program and was completed through the AI Studio, where we work with an industry partner to apply machine learning to a real world problem.
 
 Our AI Studio host company is **Swytch**. The objective of this project is to predict job satisfaction using survey and occupational data, with a particular focus on **person job fit**, which is essentially how well an individual's work values and preferences align with the characteristics of their occupation. We are exploring data from sources such as the General Social Survey (GSS), Gallup, and O*NET to develop features and machine learning models that can help predict job satisfaction.

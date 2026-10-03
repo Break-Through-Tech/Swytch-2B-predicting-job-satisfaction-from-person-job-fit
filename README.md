@@ -6,15 +6,21 @@
 
 ### 👥 **Team Members**
 
-**Example:**
-
 | Name             | GitHub Handle | Contribution                                                             |
 |------------------|---------------|--------------------------------------------------------------------------|
-| Taylor Nguyen    | @taylornguyen | Data exploration, visualization, overall project coordination            |
-| Jordan Ramirez   | @jramirez     | Data collection, exploratory data analysis (EDA), dataset documentation  |
-| Amina Hassan     | @aminahassan  | Data preprocessing, feature engineering, data validation                 |
-| Priya Mehta      | @pmehta       | Model selection, hyperparameter tuning, model training and optimization  |
-| Chris Park       | @chrispark    | Model evaluation, performance analysis, results interpretation           |
+| Jessica Liao     | @jessl314     | exploratory data analysis (EDA), data preprocessing                      |
+| Aishwarya Ramesh | @ashram15     | exploratory data analysis (EDA), data preprocessing                      |     
+| Angelina Binu    | @angbinu      | exploratory data analysis (EDA), data preprocessing                      |
+| Miskatul Moon    | @miskatulmoon | exploratory data analysis (EDA), data preprocessing                      |
+
+Emails
+
+| Name             | Emails        | 
+|------------------|---------------|
+| Jessica Liao     | jessica.liao995@gmail.com    |
+| Aishwarya Ramesh | ashram1015@gmail.com         |   
+| Angelina Binu    | angelinabinu648@gmail.com    |
+| Miskatul Moon    | miskatulmoon@gmail.com       |
 
 ---
 

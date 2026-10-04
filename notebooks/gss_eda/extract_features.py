@@ -12,8 +12,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_INPUT = PROJECT_ROOT / "data" / "interim" / "gss_2016_2024_all_cols.parquet"
 DEFAULT_RAW = PROJECT_ROOT / "data" / "raw" / "gss7224_r3a.dta"
-DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "interim" / "gss_variable_catalog.csv"
-
+DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "interim" / "gss_variable_catalog.csv" 
 
 def load_variable_labels(raw_path: Path) -> dict[str, str]:
     """Read variable labels from the source Stata file when it is available."""

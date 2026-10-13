@@ -3,3 +3,7 @@ data/
 .vscode/
 .idea/
 .DS_Store
+# Virtual environment
+venv/
+.venv/
+env/

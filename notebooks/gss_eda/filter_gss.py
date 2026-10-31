@@ -1,4 +1,5 @@
 """
+# 1
 filter gss for the most recent years 2016-2024: [insert reasoning here]
 slices the columns for relevant features.
 """
@@ -52,8 +53,7 @@ def filter_gss(start_year: int = 2016, end_year: int = 2024) -> None:
 if __name__ == "__main__":
     # filter_gss()
     selected_cols = [
-    "YEAR", "ID_", "WRKSTAT", "SATJOB", "REALINC", 
-    "OCC10", "OCC20", "JOBINC", "JOBSEC", "JOBMEANS"
+    "YEAR", "ID_", "BALLOT", "REGION", "WTSSNRPS", "AGE", "SEX", "RACE", "MARITAL", "DEGREE", "WRKSTAT", "WRKSLF", "WEEKSWRK", "SATJOB", "REALINC", "REALRINC", "OCC10", "OCC20", "JOBLOSE", "JOBFIND", "WRKSCHED", "WRKHOME", "YEARSJOB", "WRKTYPE", "HRS1", "HRS2"
     ]
 
     # Read only these columns off disk

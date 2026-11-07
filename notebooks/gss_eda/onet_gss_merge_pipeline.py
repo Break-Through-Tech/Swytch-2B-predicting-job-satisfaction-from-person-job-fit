@@ -5,7 +5,15 @@ df_gss = pd.read_csv('cleaned_gss_data.csv', dtype={'OCC10': str})
 df_fsu = pd.read_csv('onet_data/FSU_data.csv', dtype={'census_num_2010': str})
 
 # FRAGMENTATION 
-onet_features = ['wv1val_mean', 'wv2val_mean', 'si1val_mean'] 
+# using the 6 core O*NET Work Values for predicting Job Satisfaction
+onet_features = [
+    'wv1val_mean', 
+    'wv2val_mean', 
+    'wv3val_mean', 
+    'wv4val_mean', 
+    'wv5val_mean', 
+    'wv6val_mean'
+]
 
 # Subset the massive FSU dataframe FIRST to save memory
 fsu_subset = df_fsu[['census_num_2010'] + onet_features].copy()
@@ -47,7 +55,7 @@ for col in categorical_columns:
 df_ml_ready = pd.get_dummies(df_merged, drop_first=True)
 
 # Export your final dataset
-df_ml_ready.to_csv('merged_onet_gss_dataset.csv', index=False)
+df_ml_ready.to_csv('final_ml_dataset.csv', index=False)
 print("Pipeline complete! Data exported to final_ml_dataset.csv")
 
 '''

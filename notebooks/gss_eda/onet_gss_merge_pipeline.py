@@ -19,6 +19,7 @@ onet_features = [
 fsu_subset = df_fsu[['census_num_2010'] + onet_features].copy()
 
 # dummy variables
+# Assign a 1 if this job requires a moderate-to-high level of this Work Value, and a 0 if it is not important.
 for col in onet_features:
     fsu_subset[f'{col}_High'] = (fsu_subset[col] >= 3.0).astype(int)
 

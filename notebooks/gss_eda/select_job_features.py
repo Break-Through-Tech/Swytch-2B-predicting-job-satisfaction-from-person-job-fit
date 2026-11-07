@@ -1,15 +1,14 @@
-"""Select GSS variables useful for studying job satisfaction.
+"""Select the GSS columns for the job-satisfaction models.
 
-The input catalog is used for label-aware selection, so this script works across
-GSS releases where variable names or survey sections differ. The source values
-are copied unchanged; GSS special missing-value codes should be recoded in a
-separate modeling step after reviewing the selected variables.
+The source file is the 2016-2024 GSS extract. Selection is the planned
+variable list, split into a demographic baseline and later job features.
+Values are copied unchanged. Row filters and the O*NET join happen in
+onet_gss_merge_pipeline.py.
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 from pathlib import Path
 
 import pandas as pd
@@ -17,114 +16,113 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA = PROJECT_ROOT / "data" / "interim" / "gss_2016_2024_all_cols.parquet"
-DEFAULT_CATALOG = PROJECT_ROOT / "data" / "interim" / "gss_variable_catalog.csv"
 DEFAULT_FEATURE_CATALOG = PROJECT_ROOT / "data" / "interim" / "gss_job_satisfaction_feature_catalog.csv"
 DEFAULT_FEATURE_DATA = PROJECT_ROOT / "data" / "interim" / "gss_job_satisfaction_features.parquet"
 
-# Exact names protect the core analysis variables even if their labels change.
-CORE_VARIABLES = {
-    "outcome": {"SATJOB", "SATJOB1", "SATJOBHV", "JOBSAT", "EXJOBSAT"},
-    "work": {"HRS1", "HRS2", "WRKSTAT", "EVWORK", "JOBLOSE", "JOBSECOK", "TRYNEWJB"},
-    "demographic": {
-        "YEAR", "AGE", "SEX", "RACE", "EDUC", "DEGREE", "MARITAL", "CHILDS",
-        "INCOME", "RINCOME", "REGION", "RELIG", "ATTEND", "HEALTH",
-    },
-}
+# ID_ is the name used in some extracts; this release stores the respondent id as ID.
+# OCC20 is not on the 2016-2024 file. OCC10 is the Census 2010 occupation code.
+SOURCE_COLUMNS = [
+    "YEAR",
+    "ID",
+    "BALLOT",
+    "WTSSNRPS",
+    "AGE",
+    "SEX",
+    "RACE",
+    "MARITAL",
+    "DEGREE",
+    "REGION",
+    "REALINC",
+    "REALRINC",
+    "WRKSTAT",
+    "WRKSLF",
+    "WEEKSWRK",
+    "SATJOB",
+    "OCC10",
+    "JOBLOSE",
+    "JOBFIND",
+    "WRKSCHED",
+    "WRKHOME",
+    "YEARSJOB",
+    "WRKTYPE",
+    "HRS1",
+    "HRS2",
+]
 
-CATEGORY_PATTERNS = {
-    "outcome": re.compile(
-        r"satisf|happy|job satisfaction|satisfaction with (?:their|the) job",
-        re.IGNORECASE,
-    ),
-    "work": re.compile(
-        r"hours? worked|hours? (?:usually )?work|labor force|employment status|"
-        r"job security|lose job|laid off|find (?:a )?job|new job|occupation|industry|"
-        r"supervisor|boss|co-?worker|coworker|union|benefit|promotion|work stress|"
-        r"autonomy|meaning(?:ful)? work",
-        re.IGNORECASE,
-    ),
-    "demographic": re.compile(
-        r"^age$|sex|gender|race|highest year of school|education|degree|marital|"
-        r"number of children|family income|respondent.?s income|region of residence|"
-        r"religious preference|religious services|health|citizenship|veteran|urban",
-        re.IGNORECASE,
-    ),
-}
-
-# These labels refer to someone other than the respondent and can create a noisy
-# work-feature shortlist when broad label matching is used.
-NON_RESPONDENT_WORK = re.compile(r"mother|father|parent|spouse|partner|child", re.IGNORECASE)
-
-
-def classify_row(row: pd.Series) -> tuple[str, str] | None:
-    variable = str(row["variable"]).upper()
-    label = str(row.get("label", ""))
-    text = f"{variable} {label}"
-
-    for category, variables in CORE_VARIABLES.items():
-        if variable in variables:
-            return category, "core variable"
-
-    for category in ("outcome", "work", "demographic"):
-        if category == "work" and NON_RESPONDENT_WORK.search(label):
-            continue
-        if CATEGORY_PATTERNS[category].search(text):
-            return category, "label/variable keyword match"
-    return None
+# variable, group, baseline model, later job model, note
+FEATURE_ROLES = [
+    ("YEAR", "design", False, False, "Survey year. Optional control, not a person-level trait."),
+    ("ID", "design", False, False, "Respondent id. ID_ is not in this file. Do not use as a feature."),
+    ("BALLOT", "design", False, False, "Questionnaire form. Explains which items were asked. Not a predictor."),
+    ("WTSSNRPS", "design", False, False, "Survey weight. Pass as sample_weight, not as a feature."),
+    ("AGE", "baseline", True, False, "Demographic baseline."),
+    ("SEX", "baseline", True, False, "1 male, 2 female."),
+    ("RACE", "baseline", True, False, "1 white, 2 black, 3 other."),
+    ("MARITAL", "baseline", True, False, "1 married, 2 widowed, 3 divorced, 4 separated, 5 never married."),
+    ("DEGREE", "baseline", True, False, "Highest degree. Use this rather than years of school."),
+    ("REGION", "baseline", True, False, "Census division. This extract only contains codes 1-4."),
+    ("REALINC", "baseline", True, False, "Family income in constant dollars. Use this or REALRINC, not both."),
+    ("REALRINC", "baseline", True, False, "Respondent earnings in constant dollars. Use this or REALINC, not both."),
+    ("SATJOB", "outcome", False, False, "1 very satisfied through 4 very dissatisfied. Drop when fitting."),
+    ("WRKSTAT", "job", False, True, "Kept rows are 1 full-time, 2 part-time, 3 has a job but not at work last week."),
+    ("WRKSLF", "job", False, True, "1 self-employed, 2 works for someone else."),
+    ("WEEKSWRK", "job", False, True, "Weeks worked in the past year."),
+    ("HRS1", "job", False, True, "Hours worked last week. Prefer HOURS, which folds HRS2 in for WRKSTAT 3."),
+    ("HRS2", "job", False, True, "Usual weekly hours. Asked only when WRKSTAT is 3, so it is mostly empty."),
+    ("JOBLOSE", "job", False, True, "Chance of losing the job. Asked on ballots 1 and 2 only."),
+    ("JOBFIND", "job", False, True, "Chance of finding another job. Asked on ballots 1 and 2 only."),
+    ("WRKSCHED", "job", False, True, "Work schedule. Asked in 2018 and 2022 only."),
+    ("WRKHOME", "job", False, True, "Work from home. Asked in 2018 and 2022 only."),
+    ("YEARSJOB", "job", False, True, "Years with the current employer. Asked in 2018 and 2022 only."),
+    ("WRKTYPE", "job", False, True, "Type of employer. Asked in 2018 and 2022 only."),
+    ("OCC10", "linkage", False, False, "Census 2010 occupation code. Join key for O*NET, not a predictor."),
+    ("ID_", "unavailable", False, False, "Not in this GSS release. The id column is ID."),
+    ("OCC20", "unavailable", False, False, "Not in this GSS release. Link occupations with OCC10."),
+]
 
 
-def select_feature_catalog(
-    catalog: pd.DataFrame,
-    max_missing_pct: float = 90.0,
-) -> pd.DataFrame:
-    """Return usable, categorized variables relevant to job satisfaction."""
-    required = {"variable", "label", "missing_pct"}
-    missing = required.difference(catalog.columns)
+def select_columns(available: set[str]) -> list[str]:
+    """Return planned columns that exist on this extract, in list order."""
+    missing = [name for name in SOURCE_COLUMNS if name not in available]
     if missing:
-        raise ValueError(f"Catalog is missing required columns: {sorted(missing)}")
+        raise KeyError(f"Planned columns are missing from the GSS extract: {missing}")
+    return list(SOURCE_COLUMNS)
 
-    selected = []
-    for _, row in catalog.iterrows():
-        if float(row["missing_pct"]) > max_missing_pct:
-            continue
-        classification = classify_row(row)
-        if classification is None:
-            continue
-        category, reason = classification
-        record = row.to_dict()
-        record["feature_category"] = category
-        record["selection_reason"] = reason
-        selected.append(record)
 
-    if not selected:
-        raise ValueError("No features matched the selection rules.")
-
-    result = pd.DataFrame(selected)
-    category_order = {"outcome": 0, "work": 1, "demographic": 2}
-    result["_category_order"] = result["feature_category"].map(category_order)
-    result = result.sort_values(["_category_order", "missing_pct", "variable"])
-    return result.drop(columns="_category_order").reset_index(drop=True)
+def build_feature_catalog(data: pd.DataFrame) -> pd.DataFrame:
+    """Describe each planned variable, including names that are not in the file."""
+    rows = []
+    for variable, group, baseline, job_model, note in FEATURE_ROLES:
+        in_source = variable in data.columns
+        missing_pct = round(float(data[variable].isna().mean() * 100), 2) if in_source else None
+        rows.append(
+            {
+                "variable": variable,
+                "feature_group": group,
+                "in_source_file": in_source,
+                "baseline_model": baseline,
+                "job_model": job_model,
+                "missing_pct_all_respondents": missing_pct,
+                "note": note,
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def extract_job_features(
     data_path: Path = DEFAULT_DATA,
-    catalog_path: Path = DEFAULT_CATALOG,
     feature_catalog_path: Path = DEFAULT_FEATURE_CATALOG,
     feature_data_path: Path = DEFAULT_FEATURE_DATA,
-    max_missing_pct: float = 90.0,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Select feature metadata and write the corresponding respondent data."""
-    catalog = pd.read_csv(catalog_path)
-    feature_catalog = select_feature_catalog(catalog, max_missing_pct)
-
+    """Copy the planned columns from the 2016-2024 GSS extract."""
     data = pd.read_parquet(data_path)
-    available = set(data.columns)
-    variables = [name for name in feature_catalog["variable"] if name in available]
-    if not variables:
-        raise ValueError("None of the selected catalog variables are in the data file.")
+    years = sorted(int(year) for year in data["YEAR"].dropna().unique())
+    if years[0] < 2016 or years[-1] > 2024:
+        raise ValueError(f"Expected GSS years 2016-2024, found {years}.")
 
-    feature_data = data[variables].copy()
-    feature_catalog = feature_catalog[feature_catalog["variable"].isin(variables)].copy()
+    columns = select_columns(set(data.columns))
+    feature_data = data[columns].copy()
+    feature_catalog = build_feature_catalog(feature_data)
 
     feature_catalog_path.parent.mkdir(parents=True, exist_ok=True)
     feature_data_path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,18 +133,11 @@ def extract_job_features(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Select GSS work, demographic, and job-satisfaction variables."
+        description="Select the planned GSS baseline and job-satisfaction columns."
     )
     parser.add_argument("--data", type=Path, default=DEFAULT_DATA)
-    parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
     parser.add_argument("--feature-catalog", type=Path, default=DEFAULT_FEATURE_CATALOG)
     parser.add_argument("--feature-data", type=Path, default=DEFAULT_FEATURE_DATA)
-    parser.add_argument(
-        "--max-missing-pct",
-        type=float,
-        default=90.0,
-        help="Exclude variables with more than this percentage of missing values.",
-    )
     return parser.parse_args()
 
 
@@ -154,12 +145,16 @@ if __name__ == "__main__":
     args = parse_args()
     selected_catalog, selected_data = extract_job_features(
         args.data,
-        args.catalog,
         args.feature_catalog,
         args.feature_data,
-        args.max_missing_pct,
     )
-    print(f"Selected {len(selected_catalog):,} variables for {len(selected_data):,} respondents.")
-    print(selected_catalog.groupby("feature_category").size().to_string())
+    years = selected_data["YEAR"].value_counts().sort_index()
+    print(f"GSS years: {', '.join(str(int(year)) for year in years.index)}")
+    print(years.to_string())
+    print(
+        f"Selected {selected_data.shape[1]} columns for "
+        f"{len(selected_data):,} respondents."
+    )
+    print(selected_catalog.groupby("feature_group").size().to_string())
     print(f"Saved catalog: {args.feature_catalog}")
     print(f"Saved data: {args.feature_data}")

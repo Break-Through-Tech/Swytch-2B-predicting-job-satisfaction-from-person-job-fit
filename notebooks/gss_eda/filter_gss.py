@@ -21,11 +21,13 @@ def filter_gss(start_year: int = 2016, end_year: int = 2024) -> None:
         )
 
     print(f"Reading raw GSS data from {RAW_DATA_PATH.name}...")
-    # convert_categoricals=False retains numeric codes (crucial for custom missing-value mappings)
+    # convert_categoricals=False retains numeric codes (crucial for custom
+    # missing-value mappings)
     df = pd.read_stata(RAW_DATA_PATH, convert_categoricals=False)
     print(f"Loaded raw dataset with shape: {df.shape}")
 
-    # Standardize column names to uppercase to avoid case mismatch across releases
+    # Standardize column names to uppercase to avoid case mismatch across
+    # releases
     df.columns = df.columns.str.upper()
 
     if "YEAR" not in df.columns:

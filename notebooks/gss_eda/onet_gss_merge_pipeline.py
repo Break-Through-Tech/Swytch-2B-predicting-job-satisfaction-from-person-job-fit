@@ -25,7 +25,8 @@ for col in onet_features:
 
 # Keep only the merge key and the new High/Low binary columns
 fsu_clean = fsu_subset[['census_num_2010'] + [f'{col}_High' for col in onet_features]]
-
+df_gss['OCC10'] = df_gss['OCC10'].astype(str).str.replace('.0', '', regex=False).str.strip()
+fsu_clean['census_num_2010'] = fsu_clean['census_num_2010'].astype(str).str.replace('.0', '', regex=False).str.strip()
 
 #  MERGE AND TARGET 
 df_merged = pd.merge(df_gss, fsu_clean, left_on='OCC10', right_on='census_num_2010', how='left')

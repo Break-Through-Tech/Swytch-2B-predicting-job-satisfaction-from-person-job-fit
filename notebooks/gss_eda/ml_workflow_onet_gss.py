@@ -47,3 +47,19 @@ print(f"--- Baseline Logistic Regression Results ---")
 print(f"AUC:  {auc:.4f} (1.0 is perfect, 0.5 is random guessing)")
 print(f"RMSE: {rmse:.4f} (Lower is better)")
 print(f"MAPE: {mape:.4f} (Lower is better)")
+
+# --- EXTRACTING LOGISTIC REGRESSION COEFFICIENTS ---
+feature_names = X.columns
+coefficients = model.coef_[0]
+
+# Create a clean DataFrame to view the rankings
+importance_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Coefficient': coefficients
+}).sort_values(by='Coefficient', ascending=False)
+
+print("--- Top 5 Drivers of Job Satisfaction (Positive) ---")
+print(importance_df.head(5).to_string(index=False))
+
+print("\n--- Top 5 Drivers of Dissatisfaction (Negative) ---")
+print(importance_df.tail(5).to_string(index=False))

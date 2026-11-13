@@ -1,9 +1,10 @@
 """Demographic baselines for job satisfaction.
 
 Compares logistic regression, a shallow decision tree, and a random forest
-on the same background features, split, and survey weights. Job conditions
-and O*NET scores stay in the modeling table for later models. Category
-encoding and imputation are fit on the training split. Logistic regression
+on the same background features, split, and survey weights. The background
+set adds hours, weeks worked, and self-employment to demographics and
+earnings. O*NET scores stay in the modeling table for a separate comparison.
+Category encoding and imputation are fit on the training split. Logistic regression
 also standardizes numeric columns. WTSSNRPS is a survey weight, not a
 predictor. Test metrics are survey-weighted. Precision, recall, F1, and the
 confusion matrix use a threshold chosen on the training split. A fixed
@@ -34,6 +35,9 @@ WEIGHT = "WTSSNRPS"
 CATEGORICAL = ["SEX", "RACE", "MARITAL", "DEGREE", "REGION"]
 NUMERIC = ["AGE"]
 INCOME = "REALRINC"
+HOURS = "HOURS"
+WEEKS_WORKED = "WEEKSWRK"
+SELF_EMPLOYED = "WRKSLF"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 BOOTSTRAP_DRAWS = 1000
@@ -47,6 +51,7 @@ REFERENCE_LEVELS = {
     "MARITAL": "1 (married)",
     "DEGREE": "0 (less than high school)",
     "REGION": "1",
+    "WRKSLF": "1 (self-employed)",
 }
 
 
@@ -188,8 +193,10 @@ def fit_and_report(
     numeric: list[str],
     model: BaseEstimator,
     scale: bool,
+    categorical: list[str] | None = None,
 ) -> None:
-    predictors = numeric + CATEGORICAL
+    categories = CATEGORICAL if categorical is None else categorical
+    predictors = numeric + categories
     x = frame[predictors]
     y = frame[TARGET].to_numpy()
     weights = frame[WEIGHT].to_numpy()
@@ -202,7 +209,7 @@ def fit_and_report(
         random_state=RANDOM_STATE,
     )
 
-    pipeline = make_pipeline(numeric, CATEGORICAL, model, scale)
+    pipeline = make_pipeline(numeric, categories, model, scale)
     pipeline.fit(x_train, y_train, model__sample_weight=w_train)
     train_scores = pipeline.predict_proba(x_train)[:, 1]
     scores = pipeline.predict_proba(x_test)[:, 1]
@@ -237,7 +244,7 @@ def fit_and_report(
     print(matrix.to_string())
     if hasattr(estimator, "coef_"):
         coefficients = estimator.coef_.ravel()
-        names = feature_names(pipeline, numeric, CATEGORICAL)
+        names = feature_names(pipeline, numeric, categories)
         effects = (
             pd.DataFrame({"feature": names, "log_odds": coefficients, "odds_ratio": np.exp(coefficients)})
             .sort_values("log_odds", key=np.abs, ascending=False)
@@ -272,13 +279,27 @@ def main() -> None:
         print(f"  {column}: {level}")
     print("Decision tree: max depth 4, at least 50 training rows per leaf.")
     print("Random forest: 200 trees, at least 20 training rows per leaf.")
+    work_situation = NUMERIC + [INCOME, HOURS, WEEKS_WORKED]
+    work_categories = CATEGORICAL + [SELF_EMPLOYED]
     feature_sets = [
-        ("Demographics", NUMERIC),
-        ("Demographics plus own earnings (REALRINC)", NUMERIC + [INCOME]),
+        ("Demographics", NUMERIC, CATEGORICAL),
+        ("Demographics plus own earnings (REALRINC)", NUMERIC + [INCOME], CATEGORICAL),
+        (
+            "Demographics, earnings, hours, weeks worked, and self-employment",
+            work_situation,
+            work_categories,
+        ),
     ]
     for model_name, model, scale in baseline_models():
-        for feature_label, numeric in feature_sets:
-            fit_and_report(frame, f"{model_name}: {feature_label}", numeric, model, scale)
+        for feature_label, numeric, categorical in feature_sets:
+            fit_and_report(
+                frame,
+                f"{model_name}: {feature_label}",
+                numeric,
+                model,
+                scale,
+                categorical,
+            )
 
 
 if __name__ == "__main__":

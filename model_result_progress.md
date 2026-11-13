@@ -12,6 +12,9 @@ Survey-weighted metrics on the 20% test split from `baseline_models.py`. The pos
 | Decision tree | Demographics + own earnings | 0.567 | 0.509 to 0.630 | 0.896 | 0.665 | 0.763 |
 | Random forest | Demographics | 0.567 | 0.512 to 0.622 | 0.891 | 0.567 | 0.693 |
 | Random forest | Demographics + own earnings | 0.563 | 0.512 to 0.617 | 0.885 | 0.753 | 0.813 |
+| Logistic regression | Demographics + earnings + hours, weeks, self-employment | 0.584 | 0.526 to 0.637 | 0.898 | 0.586 | 0.709 |
+| Decision tree | Demographics + earnings + hours, weeks, self-employment | 0.615 | 0.557 to 0.670 | 0.907 | 0.646 | 0.754 |
+| Random forest | Demographics + earnings + hours, weeks, self-employment | 0.600 | 0.551 to 0.648 | 0.896 | 0.734 | 0.807 |
 
 ## O*NET scores, 11/12
 

@@ -8,7 +8,7 @@ Steps:
     1. Reconcile missing-value representations (-98 sentinel -> NaN).
     2. Clean target Q4 and build df_model.
     3. Clean occupation (Q6 / Q6_TEXT): keep missing/No-response Q6 (flag,
-       don't drop) and produce normalized Q6_TEXT_norm merge key.
+       don't drop) and produce normalized Q6_TEXT_norm audit metadata.
 
 Output:
     data/interim/gallup_steps1to3.parquet  (df_model, ready for O*NET merge)
@@ -33,6 +33,7 @@ UNLABELED_CSV = RAW_DATA_DIR / "JFF_formatted_public_release_values.csv"
 OUTPUT_FILE = INTERIM_DATA_DIR / "gallup_steps1to3.parquet"
 
 MISSING_SENTINEL = -98
+SATISFACTION_THRESHOLD = 7
 MIXED_TYPE_COLS = ["S1", "REGION", "DIVISION"]
 
 
@@ -71,7 +72,7 @@ def step1_reconcile_missing(df_unlabeled: pd.DataFrame) -> pd.DataFrame:
     print("\n=== Step 1: Reconcile missing-value representations (-98 -> NaN) ===")
     print(f"Shape before: {df_unlabeled.shape}")
 
-    df_unlabeled_clean = df_unlabeled.replace(MISSING_SENTINEL, np.nan)
+    df_unlabeled_clean = reconcile_missing_values(df_unlabeled)
 
     print(f"Shape after : {df_unlabeled_clean.shape}")
     print(
@@ -86,6 +87,11 @@ def step1_reconcile_missing(df_unlabeled: pd.DataFrame) -> pd.DataFrame:
         print(top_missing)
 
     return df_unlabeled_clean
+
+
+def reconcile_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace the Gallup no-response sentinel without changing raw columns."""
+    return df.replace(MISSING_SENTINEL, np.nan)
 
 
 def step2_clean_target(df_labeled: pd.DataFrame) -> pd.DataFrame:
@@ -107,7 +113,7 @@ def step2_clean_target(df_labeled: pd.DataFrame) -> pd.DataFrame:
     df_model = df_model[df_model["Q4"].notna()].copy()
     print(f"Rows after coercing Q4 to numeric: {len(df_model)}")
 
-    df_model["satisfied"] = (df_model["Q4"] >= 7).astype(int)
+    df_model["satisfied"] = (df_model["Q4"] >= SATISFACTION_THRESHOLD).astype(int)
     print("Satisfied class distribution:")
     print(df_model["satisfied"].value_counts())
 
@@ -118,8 +124,8 @@ def step3_clean_occupation(df_model: pd.DataFrame) -> pd.DataFrame:
     """Step 3: Clean occupation (Q6 / Q6_TEXT) in preparation for the O*NET merge.
 
     - Keep rows with missing/No-response Q6 (flag them instead of dropping).
-    - Normalize Q6_TEXT write-ins into Q6_TEXT_norm (lowercased, stripped) to
-      serve as the merge key for the O*NET SOC crosswalk.
+    - Normalize Q6_TEXT write-ins into Q6_TEXT_norm (lowercased, stripped) for
+      audit metadata. Exact code matching is the only initial linkage method.
     - Cast mixed-type columns to str for consistency.
     """
     print("\n=== Step 3: Clean occupation (Q6 / Q6_TEXT) ===")
@@ -138,7 +144,7 @@ def step3_clean_occupation(df_model: pd.DataFrame) -> pd.DataFrame:
         df_model["Q6"].astype(str).str.strip() == "No response", "Q6"
     ] = np.nan
 
-    # Normalize the write-in text so it can be matched to the O*NET crosswalk.
+    # Normalize write-in text for audit and later review, not as a join key.
     df_model["Q6_TEXT_norm"] = (
         df_model["Q6_TEXT"]
         .fillna("")
@@ -169,7 +175,9 @@ def step3_clean_occupation(df_model: pd.DataFrame) -> pd.DataFrame:
         if col in df_model.columns:
             df_model[col] = df_model[col].astype(str).str.strip()
 
-    print("\n# TODO: join to O*NET SOC crosswalk to assign occupation codes / profiles")
+    df_model["occupation_missing"] = no_occ.astype("int8")
+
+    print("\n# Exact-code linkage is implemented in occupation_linkage.py")
     return df_model
 
 
@@ -182,9 +190,9 @@ def run(
     df_labeled, df_unlabeled = load_data(labeled_path, unlabeled_path)
 
     
-    _ = step1_reconcile_missing(df_unlabeled)
+    df_unlabeled = step1_reconcile_missing(df_unlabeled)
+    df_labeled = reconcile_missing_values(df_labeled)
 
-    
     df_model = step2_clean_target(df_labeled)
 
     

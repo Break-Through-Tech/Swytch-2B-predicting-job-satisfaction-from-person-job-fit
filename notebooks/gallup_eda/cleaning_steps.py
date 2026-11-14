@@ -1,7 +1,7 @@
 """
 Gallup American Job Quality Study — data cleaning Steps 1-3 (pre-O*NET merge).
 
-Reproduces Steps 1-3 from notebooks/gallup_eda/eda.ipynb so the resulting frame
+Updates Steps 1-3 from notebooks/gallup_eda/eda.ipynb so the resulting frame
 is ready for the O*NET SOC crosswalk join (flagged as a TODO in the notebook).
 
 Steps:
@@ -14,7 +14,7 @@ Output:
     data/interim/gallup_steps1to3.parquet  (df_model, ready for O*NET merge)
 
 Usage:
-    python notebooks/gallup_eda/clean_steps_1to3.py
+    python notebooks/gallup_eda/cleaning_steps.py
 """
 
 from __future__ import annotations
@@ -41,20 +41,14 @@ def load_data(
     labeled_path: Path = LABELED_CSV, unlabeled_path: Path = UNLABELED_CSV
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load the labeled and unlabeled Gallup CSVs."""
-    if not labeled_path.exists():
-        raise FileNotFoundError(
-            f"Labeled CSV not found at: {labeled_path}\n"
-            "Please place JFF_formatted_public_release_labels.csv inside data/raw/."
-        )
     if not unlabeled_path.exists():
         raise FileNotFoundError(
             f"Unlabeled CSV not found at: {unlabeled_path}\n"
             "Please place JFF_formatted_public_release_values.csv inside data/raw/."
         )
 
-    print(f"Reading labeled data from {labeled_path.name} ...")
-    df_labeled = pd.read_csv(labeled_path, encoding="cp1252")
-    print(f"  loaded labeled shape: {df_labeled.shape}")
+    # Labeled CSV is optional and only retained for notebook comparisons.
+    df_labeled = pd.read_csv(labeled_path, encoding="cp1252") if labeled_path.exists() else None
 
     print(f"Reading unlabeled data from {unlabeled_path.name} ...")
     df_unlabeled = pd.read_csv(unlabeled_path, encoding="cp1252")
@@ -95,7 +89,7 @@ def reconcile_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def step2_clean_target(df_labeled: pd.DataFrame) -> pd.DataFrame:
-    """Step 2: Clean the target variable Q4 and build df_model.
+    """Step 2: Clean numeric Q4 and build df_model.
 
     - Drop rows with missing Q4.
     - Coerce Q4 to numeric (dropping any remaining non-numeric values).
@@ -151,6 +145,7 @@ def step3_clean_occupation(df_model: pd.DataFrame) -> pd.DataFrame:
         .astype(str)
         .str.strip()
         .str.lower()
+        .replace({"-98": "", "no response": ""})
     )
 
     print("Sample Q6_TEXT write-ins:")
@@ -175,7 +170,18 @@ def step3_clean_occupation(df_model: pd.DataFrame) -> pd.DataFrame:
         if col in df_model.columns:
             df_model[col] = df_model[col].astype(str).str.strip()
 
-    df_model["occupation_missing"] = no_occ.astype("int8")
+    # Gallup Q6 is a broad category, not a Census/SOC code. Q6=24 means
+    # "Something else"; Q6_CODED can supply a coded category for that case.
+    q6 = pd.to_numeric(df_model["Q6"], errors="coerce")
+    coded = pd.to_numeric(df_model["Q6_CODED"], errors="coerce")
+    df_model["gallup_occupation_group"] = q6.where(q6.ne(24), coded)
+    df_model["gallup_occupation_group"] = df_model["gallup_occupation_group"].where(
+        df_model["gallup_occupation_group"].between(1, 25) & df_model["gallup_occupation_group"].ne(24)
+    ).astype("Int64")
+    df_model["occupation_source"] = np.select(
+        [q6.eq(24) & coded.notna(), q6.notna() & q6.ne(24)],
+        ["Q6_CODED", "Q6"], default="missing_or_uncoded")
+    df_model["occupation_missing"] = df_model["gallup_occupation_group"].isna().astype("int8")
 
     print("\n# Exact-code linkage is implemented in occupation_linkage.py")
     return df_model
@@ -191,9 +197,10 @@ def run(
 
     
     df_unlabeled = step1_reconcile_missing(df_unlabeled)
-    df_labeled = reconcile_missing_values(df_labeled)
+    if df_labeled is not None:
+        df_labeled = reconcile_missing_values(df_labeled)
 
-    df_model = step2_clean_target(df_labeled)
+    df_model = step2_clean_target(df_unlabeled)
 
     
     df_model = step3_clean_occupation(df_model)

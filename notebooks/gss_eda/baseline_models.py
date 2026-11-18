@@ -257,15 +257,15 @@ def fit_and_report(
 def baseline_models() -> list[tuple[str, BaseEstimator, bool]]:
     """Model name, estimator, and whether numeric columns are standardized."""
     return [
-        ("Logistic regression", LogisticRegression(max_iter=1000, solver="lbfgs"), True),
+        ("Logistic regression", LogisticRegression(max_iter=1000, class_weight="balanced", solver="lbfgs"), True),
         (
             "Decision tree",
-            DecisionTreeClassifier(max_depth=4, min_samples_leaf=50, random_state=RANDOM_STATE),
+            DecisionTreeClassifier(max_depth=4, min_samples_leaf=20, class_weight="balanced", random_state=RANDOM_STATE),
             False,
         ),
         (
             "Random forest",
-            RandomForestClassifier(n_estimators=200, min_samples_leaf=20, random_state=RANDOM_STATE),
+            RandomForestClassifier(n_estimators=200, min_samples_leaf=20, class_weight="balanced", random_state=RANDOM_STATE),
             False,
         ),
     ]

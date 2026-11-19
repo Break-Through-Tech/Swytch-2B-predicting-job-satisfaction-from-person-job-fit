@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_percentage_error
+from sklearn.metrics import f1_score, roc_auc_score, mean_squared_error, mean_absolute_percentage_error
 
 # 1. Load the ML-ready data
 df = pd.read_csv('final_ml_dataset.csv')
@@ -32,25 +32,29 @@ X_test_scaled = scaler.transform(X_test_imputed)
 # 6. TRAIN THE BASELINE MODEL
 # class_weight='balanced' for survey imbalance
 # max_iter=1000 ensures the underlying solver converges without throwing warnings
-model = LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)
-model.fit(X_train_scaled, y_train)
+lg_model = LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)
+lg_model.fit(X_train_scaled, y_train)
 
 # GENERATE PREDICTIONS
 # probabilities (0.0 to 1.0) as error metrics
-y_pred_prob = model.predict_proba(X_test_scaled)[:, 1]
+y_pred_prob = lg_model.predict_proba(X_test_scaled)[:, 1]
+lg_pred_class = lg_model.predict(X_test_imputed) # Hard 1/0 classes for F1
 
 auc = roc_auc_score(y_test, y_pred_prob)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred_prob))
 mape = mean_absolute_percentage_error(y_test, y_pred_prob)
 
+lg_f1 = f1_score(y_test, lg_pred_class)
+
 print(f"--- Baseline Logistic Regression Results ---")
 print(f"AUC:  {auc:.4f} (1.0 is perfect, 0.5 is random guessing)")
 print(f"RMSE: {rmse:.4f} (Lower is better)")
 print(f"MAPE: {mape:.4f} (Lower is better)")
+print(f"F1:   {lg_f1:.4f}")
 
 # --- EXTRACTING LOGISTIC REGRESSION COEFFICIENTS ---
 feature_names = X.columns
-coefficients = model.coef_[0]
+coefficients = lg_model.coef_[0]
 
 # Create a clean DataFrame to view the rankings
 importance_df = pd.DataFrame({

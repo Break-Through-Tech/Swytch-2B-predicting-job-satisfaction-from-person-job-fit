@@ -89,17 +89,17 @@ All models share the same setup:
 - class-balanced training;
 - preprocessing fit on training data only.
 
-The background preprocessing is the same as in `gallup_baseline.py`, so the reference numbers match the team's earlier runs exactly: LR baseline 0.6271, LR + O\*NET 0.6296, RF + O\*NET 0.6144.
+The background preprocessing is the same as in `gallup_baseline.py`, so the rerun reproduced the reference numbers: LR baseline 0.6271, LR + O\*NET 0.6297, RF + O\*NET 0.6144.
 
 ### Test ROC-AUC
 
 | Feature set | Logistic regression | Random forest | Keras NN |
 |---|---:|---:|---:|
 | Background only (8 features) | 0.6271 | 0.6233 | 0.6282 |
-| + remote & advancement fit (Outline core) | 0.6843 | 0.6781 | 0.6874 |
-| + all Gallup fit (adds voice and hours) | 0.7299 | 0.7256 | 0.7299 |
-| **+ all fit incl. O\*NET advancement** | **0.7308** | **0.7292** | **0.7374** |
-| + 407 O\*NET features (reference) | 0.6296 | 0.6144 | 0.6195 |
+| + remote & advancement fit (Outline core) | 0.6843 | 0.6781 | 0.6875 |
+| + all Gallup fit (adds voice and hours) | 0.7299 | 0.7256 | 0.7295 |
+| **+ all fit incl. O\*NET advancement** | **0.7308** | **0.7292** | **0.7375** |
+| + 407 O\*NET features (reference) | 0.6297 | 0.6144 | 0.6249 |
 
 ### AUC improvement over background only
 

@@ -41,7 +41,7 @@ The models are evaluated using ROC-AUC, balanced accuracy, F1-score, and confusi
 | Model | Test ROC-AUC |
 |---|---:|
 | Gallup Baseline Logistic Regression | 0.6271 |
-| Gallup + O*NET Logistic Regression | **0.6296** |
+| Gallup + O*NET Logistic Regression | **0.6297** |
 | Tuned Gallup + O*NET Logistic Regression | 0.6290 |
 | Gallup + O*NET Random Forest | 0.6144 |
 

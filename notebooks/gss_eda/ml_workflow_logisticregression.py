@@ -67,3 +67,5 @@ print(importance_df.head(5).to_string(index=False))
 
 print("\n--- Top 5 Drivers of Dissatisfaction (Negative) ---")
 print(importance_df.tail(5).to_string(index=False))
+
+np.save('lr_probs.npy', y_pred_prob)

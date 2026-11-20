@@ -127,6 +127,7 @@ Precision, recall, F1 and balanced accuracy use a 0.5 threshold. The confusion m
 
 | Algorithm | Model | ROC-AUC | PR-AUC | Precision | Recall | F1 | Balanced acc. | Confusion matrix (TN, FP, FN, TP) |
 |---|---|---:|---:|---:|---:|---:|---:|---|
+| No model (reference) | always predicts "satisfied" | 0.500 | 0.639 | 0.639 | 1.000 | **0.780** | 0.500 | 0, 1328, 0, 2349 |
 | Logistic regression | background | 0.627 | 0.738 | 0.712 | 0.594 | 0.648 | 0.585 | 764, 564, 954, 1395 |
 | Logistic regression | + fit | 0.731 | 0.813 | 0.771 | 0.697 | 0.732 | 0.666 | 843, 485, 712, 1637 |
 | Random forest | background | 0.623 | 0.740 | 0.713 | 0.579 | 0.639 | 0.583 | 780, 548, 990, 1359 |
@@ -134,7 +135,19 @@ Precision, recall, F1 and balanced accuracy use a 0.5 threshold. The confusion m
 | Keras NN | background | 0.628 | 0.741 | 0.713 | 0.620 | 0.664 | 0.590 | 742, 586, 892, 1457 |
 | Keras NN | + fit | 0.737 | 0.822 | 0.781 | 0.690 | 0.733 | 0.674 | 874, 454, 728, 1621 |
 
-All three fit models clear the team's own target of **F1 ≥ 0.70**, scoring 0.73–0.74. The background-only models reach 0.64–0.66.
+**F1 is not a useful target for this data.** 63.9% of test respondents are satisfied, so labelling *everyone* "satisfied" already scores F1 = 2p / (1 + p) = **0.78**. That is higher than every trained model here (0.64–0.74).
+
+The trained models score lower because class balancing makes them flag unsatisfied workers, which costs some recall on the satisfied ones. So the team's F1 ≥ 0.70 target from the project brief does not show whether a model has learned anything.
+
+Fairer measures, each with its no-skill reference:
+
+| Measure | No skill | Background only | + fit |
+|---|---:|---:|---:|
+| ROC-AUC | 0.50 | 0.62–0.63 | 0.73–0.74 |
+| PR-AUC | 0.639 (share satisfied) | 0.74 | 0.81–0.82 |
+| Balanced accuracy | 0.50 | 0.58–0.59 | 0.67 |
+
+Fit features clearly help on all three.
 
 ### Model settings
 

@@ -1,0 +1,6 @@
+comparison,auc_improvement,ci_low,ci_high,share_of_draws_above_0
+Two-sided fit (Outline formulas) vs Background only,0.1037050500853991,0.08703645004420463,0.12033858472621375,1.0
+Unmet need (one-sided) vs Background only,0.11375803341078239,0.09626571352945013,0.13078680168727722,1.0
+Unmet need (one-sided) vs Two-sided fit (Outline formulas),0.010052983325383291,0.003358938659665253,0.0165934547532623,0.9995
+Two-sided fit + unmet need vs Unmet need (one-sided),0.005924400026671162,0.0014388352776140395,0.010579633789104691,0.994
+Raw want/have answers vs Unmet need (one-sided),0.02564472449183708,0.015945840625690797,0.03514173063922357,1.0

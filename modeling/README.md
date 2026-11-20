@@ -84,6 +84,10 @@ Grouped permutation importance measures model reliance, not causal relationships
 | `gallup_random_forest.py` | Trains and tunes a random forest classifier |
 | `compare_gallup_models.py` | Compares baseline and combined models using paired bootstrap analysis |
 | `gallup_feature_importance.py` | Calculates individual and grouped permutation importance |
+| `gallup_fit_models.py` | Track A: background vs background + person-job fit features (logistic regression, random forest, Keras), with paired bootstrap CIs. Results: [`fit_results.md`](fit_results.md) |
+| `gallup_fit_scoring_comparison.py` | Track B: two-sided fit formulas vs one-sided "unmet need" scores vs raw answers |
+
+The fit scripts need `notebooks/gallup_eda/output/gallup_fsu_fit_model.csv`, built by `python notebooks/gallup_eda/engineer_fit_features.py`.
 
 ## Running the Models
 

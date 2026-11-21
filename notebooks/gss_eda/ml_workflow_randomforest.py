@@ -1,3 +1,7 @@
+'''
+ML workflow and coding setup for creating random forest model with 
+O*NET and GSS data. 
+'''
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -19,7 +23,7 @@ y = df['SATJOB_BINARY']
 # 2. TRAIN/TEST SPLIT
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 3. IMPUTE MISSING VALUES (Notice we skip the StandardScaler step here)
+# 3. IMPUTE MISSING VALUES 
 imputer = SimpleImputer(strategy='median')
 X_train_imputed = imputer.fit_transform(X_train)
 X_test_imputed = imputer.transform(X_test)

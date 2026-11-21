@@ -1,3 +1,8 @@
+'''
+ML workflow and coding setup for creating logistic regression model with 
+O*NET and GSS data. 
+'''
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split

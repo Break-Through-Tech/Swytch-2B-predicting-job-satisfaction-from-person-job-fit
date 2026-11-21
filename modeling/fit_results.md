@@ -228,6 +228,24 @@ So I also scored fit one-sidedly as **unmet need**: how far the job falls short 
 
 Unmet need beats the two-sided formulas by **+0.010 (95% CI +0.003, +0.017)**. For Swytch, this means matching should focus on avoiding a shortfall, not on avoiding any difference at all.
 
+## Unseen-occupation validation
+
+I also tested whether the person-job fit result generalizes to groups that
+were not represented during training. This uses five-fold `GroupKFold` for
+occupation, industry, and occupation × industry groups. Preprocessing,
+imputation, and each model are fit only on the training rows in each fold.
+
+| Held-out strategy | Mean fit ROC-AUC | Mean baseline ROC-AUC | Mean ROC-AUC improvement |
+|---|---:|---:|---:|
+| Occupation | 0.723 | 0.623 | **+0.100** |
+| Industry | 0.722 | 0.625 | **+0.097** |
+| Occupation × industry | 0.723 | 0.623 | **+0.099** |
+
+The improvement is consistent across all folds for all three strategies. Full
+fold, PR-AUC, and balanced-accuracy metrics are in
+`modeling/output/heldout/heldout_fold_metrics.csv`; the summary is in
+`modeling/output/heldout/heldout_summary.csv`.
+
 ## Limitations
 
 1. **Same-survey bias.** Fit and satisfaction come from the same person in the same questionnaire, so mood can colour both answers. The direction of cause is also unclear: satisfied workers may *report* having more influence.

@@ -6,6 +6,8 @@ This folder contains machine learning experiments for the SWYTCH Job Satisfactio
 
 The goal is to investigate whether occupational characteristics from O*NET improve predictions of employee job satisfaction when combined with Gallup survey information.
 
+See [PIPELINE_ARCHITECTURE.md](PIPELINE_ARCHITECTURE.md) for the Gallup and GSS pipeline architecture.
+
 We compare logistic regression and random forest models, evaluate predictive performance, and analyze the contributions of Gallup and O*NET features.
 
 ## Dataset
@@ -86,6 +88,7 @@ Grouped permutation importance measures model reliance, not causal relationships
 | `gallup_feature_importance.py` | Calculates individual and grouped permutation importance |
 | `gallup_fit_models.py` | Track A: background vs background + person-job fit features (logistic regression, random forest, Keras), with paired bootstrap CIs. Results: [`fit_results.md`](fit_results.md) |
 | `gallup_fit_scoring_comparison.py` | Track B: two-sided fit formulas vs one-sided "unmet need" scores vs raw answers |
+| `gallup_heldout_validation.py` | 5-fold group-held-out validation for unseen occupations, industries, and occupation-industry cells |
 | `gallup_full_models.py` | Adds the rest of the Gallup survey in tiers (profile → want/have fit → job conditions → job appraisals), with tuned logistic regression, gradient boosting, random forest, Keras and an ensemble. Results: [`full_model_results.md`](full_model_results.md) |
 
 The fit scripts need `notebooks/gallup_eda/output/gallup_fsu_fit_model.csv`, built by `python notebooks/gallup_eda/engineer_fit_features.py`. `gallup_full_models.py` also reads the raw Gallup file `data/raw/JFF_formatted_public_release_values.csv`. Its tests run from this folder with `python -m unittest test_gallup_full_models`.
@@ -107,6 +110,7 @@ python modeling/gallup_onet_tuned.py
 python modeling/gallup_random_forest.py
 python modeling/compare_gallup_models.py
 python modeling/gallup_feature_importance.py
+python modeling/gallup_heldout_validation.py
 ```
 
 The required modeling dataset must be present at the path described above.

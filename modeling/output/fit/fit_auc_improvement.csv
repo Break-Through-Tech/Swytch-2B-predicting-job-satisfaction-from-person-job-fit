@@ -1,0 +1,17 @@
+algorithm,comparison,auc_improvement,ci_low,ci_high,share_of_draws_above_0
+Logistic regression,Background + remote & advancement fit vs Background only,0.0572393340924362,0.0433181315155725,0.07091216289708459,1.0
+Logistic regression,Background + all Gallup fit vs Background only,0.10283342822118624,0.08606044297244225,0.11965947612951308,1.0
+Logistic regression,Background + all fit (incl. O*NET advancement) vs Background only,0.1037050500853991,0.08703645004420463,0.12033858472621375,1.0
+Logistic regression,Background + 407 O*NET features (reference) vs Background only,0.0025872968245908012,-0.002661833267445235,0.008142498262630476,0.837
+Random forest,Background + remote & advancement fit vs Background only,0.054800940672011134,0.04025697336422392,0.06918252133598893,1.0
+Random forest,Background + all Gallup fit vs Background only,0.10230401170454484,0.08307844263656745,0.1202392530563795,1.0
+Random forest,Background + all fit (incl. O*NET advancement) vs Background only,0.10586711469120402,0.08668221815722696,0.12361058912543554,1.0
+Random forest,Background + 407 O*NET features (reference) vs Background only,-0.008911283704421735,-0.02390463002753505,0.005225525786082379,0.1215
+Keras neural network,Background + remote & advancement fit vs Background only,0.05932510373550404,0.04446051940457767,0.07449366665844716,1.0
+Keras neural network,Background + all Gallup fit vs Background only,0.10133830340519157,0.08342629546513398,0.11852283828491848,1.0
+Keras neural network,Background + all fit (incl. O*NET advancement) vs Background only,0.109364661711982,0.09217237341074054,0.12748524881628623,1.0
+Keras neural network,Background + 407 O*NET features (reference) vs Background only,-0.003307290464540147,-0.012667922671064829,0.006366414908820583,0.2585
+Logistic regression,Background + 'want' answers only vs Background only,0.06323057235327001,0.047676655632136494,0.07769555921037906,1.0
+Logistic regression,Background + 'have' answers only vs Background only,0.1047642036857519,0.08691384383268076,0.12168405008497658,1.0
+Logistic regression,Background + raw want/have answers vs Background only,0.13940275790261947,0.12042189699439898,0.15744357354312738,1.0
+Logistic regression,+ all fit vs raw want/have answers alone,0.004670341647560972,0.001768322942454037,0.007965507234796882,0.999

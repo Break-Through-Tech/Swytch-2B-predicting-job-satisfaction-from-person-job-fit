@@ -1,10 +1,14 @@
+'''
+CHI Squared Test to check whether there is a significant difference in job satisfaction per person
+Results are yes, p-value < 0.5
+'''
 import pandas as pd
 from scipy.stats import chi2_contingency
 
-# 1. Load cleaned GSS data (which still has OCC10)
+# 1. Load cleaned GSS data 
 df = pd.read_csv('cleaned_gss_data.csv')
 
-# Create binary target (adjust if SATJOB is already numeric/binary in your file)
+# Create binary target 
 if 'SATJOB_BINARY' not in df.columns:
     df['SATJOB_BINARY'] = (df['SATJOB'] == 'Very Satisfied').astype(int)
 
@@ -28,7 +32,7 @@ def map_occ_group(code):
 
 df['OCC_GROUP'] = df['OCC10_num'].apply(map_occ_group)
 
-# 3. CHI-SQUARE TEST (Is the difference statistically significant?)
+# 3. CHI-SQUARE TEST (Is the difference in job satisfactions statistically significant?)
 contingency_table = pd.crosstab(df['OCC_GROUP'], df['SATJOB_BINARY'])
 chi2, p_val, dof, ex = chi2_contingency(contingency_table)
 
@@ -44,7 +48,7 @@ group_summary = df.groupby('OCC_GROUP')['SATJOB_BINARY'].agg(
 print("--- Job Satisfaction by Major Occupation Group ---")
 print(group_summary)
 
-# 5. TOP 5 HIGHEST & LOWEST SPECIFIC OCC10 CODES (Filtered to n >= 30)
+# 5. TOP 5 HIGHEST & LOWEST SPECIFIC OCC10 CODES 
 occ_summary = df.groupby('OCC10_num')['SATJOB_BINARY'].agg(
     Respondents='count',
     Pct_Very_Satisfied=lambda x: round(x.mean() * 100, 2)

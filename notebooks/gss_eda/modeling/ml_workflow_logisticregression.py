@@ -14,7 +14,6 @@ from sklearn.metrics import f1_score, roc_auc_score, mean_squared_error, mean_ab
 # 1. Load the ML-ready data
 df = pd.read_csv('final_ml_dataset.csv')
 
-# Drop any rows where the target itself is missing (we can't train on a blank answer)
 df = df.dropna(subset=['SATJOB_BINARY'])
 
 # 2. Separate Features (X) and Target (y)
@@ -61,7 +60,7 @@ print(f"F1:   {lg_f1:.4f}")
 feature_names = X.columns
 coefficients = lg_model.coef_[0]
 
-# Create a clean DataFrame to view the rankings
+# DataFrame to view the rankings
 importance_df = pd.DataFrame({
     'Feature': feature_names,
     'Coefficient': coefficients

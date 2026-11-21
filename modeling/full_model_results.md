@@ -133,7 +133,7 @@ The unit tests check that Q4, Q47 and the well-being items never reach tiers Aâ€
 | C + want/have fit | 64 | 0.780 | 0.780 | +0.118 [0.101, 0.133] |
 | D + job conditions | 89 | 0.811 | 0.810 | +0.031 [0.023, 0.039] |
 | E + job appraisals | 100 | 0.863 | 0.865 | +0.052 [0.043, 0.061] |
-| *F + well-being (not usable)* | *106* | *0.898* | *0.902* | *+0.035 [0.029, 0.042]* |
+| *F + well-being (not usable)* | *106* | *0.898* | *0.901* | *+0.035 [0.029, 0.042]* |
 
 Every gain is positive in 100% of bootstrap draws. The biggest single step is the want/have fit tier (+0.118). This agrees with the earlier fit work: what the job gives relative to what the person wants carries real signal.
 

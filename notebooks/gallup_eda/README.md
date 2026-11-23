@@ -1,37 +1,20 @@
-# Gallup occupation linkage
+# Gallup + FSU/O*NET preparation (updated teammate pipeline)
 
-`occupation_linkage.py` performs the first linkage stage for the Gallup
-American Job Quality Study. It uses exact normalized source codes only. It
-does not match write-in text or drop respondents whose occupation is missing
-or absent from the crosswalk.
+**Existing files retained:** `cleaning_steps.py`, `occupation_linkage.py`, `test_occupation_linkage.py`. The cleaning script is corrected to use the numeric Gallup satisfaction column and derive a Gallup occupation group. The original linkage functions are reused by `prepare_model_data.py`, not replaced.
 
-The crosswalk column names are required on the command line because the
-workbook schema must be verified before running the pipeline:
+## Run
 
 ```bash
-python notebooks/gallup_eda/occupation_linkage.py \
-  --respondents data/interim/gallup_steps1to3.parquet \
-  --crosswalk /path/to/Occupation_Handbook_to_ONET-SOC.xlsx \
-  --output data/interim/gallup_occupation_linked.parquet \
-  --audit-output data/interim/gallup_linkage_audit.csv \
-  --respondent-code-col Q6_CODED \
-  --source-code-col SOURCE_CODE \
-  --onet-code-col ONET_SOC_CODE \
-  --source-code-width 4 \
-  --attribute work_value_1 \
-  --attribute work_value_2
+python -m unittest discover -s . -p 'test_*.py' -v
+python prepare_model_data.py --gallup /path/to/JFF_formatted_public_release_values.csv --fsu /path/to/Census2010-O_NET26.1_Data.xlsx
 ```
 
-The linked Parquet file retains every respondent and adds the normalized code,
-O*NET code candidates, aggregated numeric attributes, `match_status`,
-`match_method`, `candidate_count`, and `match_confidence`. A `.csv` audit path
-writes separate overall and source-code-level coverage files. An `.xlsx` audit
-path writes both tables as workbook sheets when an Excel writer is installed. A
-metadata JSON file records input and crosswalk SHA-256 hashes, the selected
-sheet, code columns, and the exact-code-only scope.
+Outputs in `output/`: `gallup_fsu_pre_model.csv`, `respondent_linkage_audit.csv`, `census_to_gallup_mapping_audit.csv`, `linkage_overall.csv`, `linkage_by_group.csv`, `validation_report.json`.
 
-Run the focused tests without installing extra tooling:
+## Critical limitations
 
-```bash
-python -m unittest discover -s notebooks/gallup_eda -p 'test_*.py' -v
-```
+- FSU contains detailed **2010 Census occupation codes**, while Gallup Q6 contains broad categories. We use a **provisional code-range grouping** (including a healthcare subgroup approximation), not exact Gallup-to-Census matching. Inspect `census_to_gallup_mapping_audit.csv` and validate all groups before presenting as a final scientific crosswalk.
+- O*NET features are **unweighted group averages**, not respondent-specific occupation features. No false `match_confidence=1` is reported.
+- Q4/satisfied is the target; never include Q4, ENTITY_ID, or audit columns as predictors.
+- **No model is trained here.** Split train/test before fitting any imputer, scaler, encoder, or feature selector. Review potential target leakage in survey predictors.
+- Original `occupation_linkage.py` CLI remains available for genuine exact-code crosswalks, but should **not** be used directly with Gallup Q6 and the OOH crosswalk.

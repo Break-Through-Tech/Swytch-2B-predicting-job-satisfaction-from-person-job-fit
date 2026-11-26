@@ -65,18 +65,22 @@ print(importance_df.head(10).to_string(index=False))
 os.makedirs('presentation_visuals', exist_ok=True)
 
 y_pred_prob = np.load('lr_probs.npy')
+nn_pred_prob = np.load('nn_probs.npy')
 
 # Calculate ROC curves and AUCs
 fpr_lr, tpr_lr, _ = roc_curve(y_test, y_pred_prob)
 fpr_rf, tpr_rf, _ = roc_curve(y_test, rf_pred_prob)
+fpr_nn, tpr_nn, _ = roc_curve(y_test, nn_pred_prob)
 
 lr_auc = roc_auc_score(y_test, y_pred_prob)
 rf_auc = roc_auc_score(y_test, rf_pred_prob)
+nn_auc = roc_auc_score(y_test, nn_pred_prob)
 
 # Plot with matching presentation palette
 fig, ax = plt.subplots(figsize=(7.5, 6))
 ax.plot(fpr_lr, tpr_lr, label=f'Logistic Regression (AUC = {lr_auc:.4f})', color='#1D3557', linewidth=2.5)
 ax.plot(fpr_rf, tpr_rf, label=f'Tuned Random Forest (AUC = {rf_auc:.4f})', color='#E76F51', linewidth=2.5)
+ax.plot(fpr_nn, tpr_nn, label=f'Keras Neural Network (AUC = {nn_auc:.4f})', color="#51E7B5", linewidth=2.5)
 ax.plot([0, 1], [0, 1], linestyle='--', color='#6C757D', label='Random Guessing (AUC = 0.5000)', alpha=0.7)
 
 ax.set_title('ROC Curve Comparison (O*NET >= 3.0 Threshold)', fontsize=13, fontweight='bold')

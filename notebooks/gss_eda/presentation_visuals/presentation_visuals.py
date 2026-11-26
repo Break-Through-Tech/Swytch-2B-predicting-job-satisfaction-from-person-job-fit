@@ -98,10 +98,11 @@ experiments = [
     'LogReg\n(O*NET >= 3.0)\n[WINNER]',
     'Random Forest\n(Untuned,\n>= 3.0)',
     'Random Forest\n(Tuned,\nContinuous)',
-    'Random Forest\n(Tuned,\n>= 3.0)'
+    'Random Forest\n(Tuned,\n>= 3.0)',
+    'Keras NN\n(Multi-Layer,\n>= 3.0)' # O*NET work values threshold of 3.0
 ]
-auc_scores = [0.6894, 0.6883, 0.6910, 0.6935, 0.6789, 0.6822, 0.6867]
-f1_scores  = [np.nan, 0.6330, 0.6330, 0.6330, 0.5525, 0.5999, 0.6057]
+auc_scores = [0.6894, 0.6883, 0.6910, 0.6935, 0.6789, 0.6822, 0.6867, 0.6825]
+f1_scores  = [np.nan, 0.6330, 0.6330, 0.6330, 0.5525, 0.5999, 0.6057, 0.6196]
 
 x = np.arange(len(experiments))
 width = 0.36
@@ -140,14 +141,14 @@ plt.close()
 # 3. VISUAL 3: DIVERGING BAR CHART (WINNING LOGISTIC REGRESSION DRIVERS)
 # ==============================================================================
 lr_labels = [
-    'Generally Not Too Happy',
-    'Pretty Happy (vs. Very Happy)',
-    'Mid-Income ($40k-$50k)',
-    'Finds Life Routine',
-    'Finds Life Dull',
+    'Generally Not Too Happy (HAPPY_3)',
+    'Pretty Happy (vs. Very Happy) (HAPPY_2)',
+    'Mid-Income ($40k-$50k) (RINCOM16_18)',
+    'Finds Life Routine (LIFE_2)',
+    'Finds Life Dull (LIFE_3)',
     'Strong Republican (Party ID)',
-    'Upper Class',
-    'Middle Class',
+    'Upper Class (CLASS_4)',
+    'Middle Class (CLASS_3)',
     'O*NET: High Independence',
     'Age (Years)'
 ]
@@ -179,14 +180,14 @@ plt.close()
 # ==============================================================================
 rf_labels = [
     'Years of Education',
-    'Fair Health',
+    'Fair Health (HEALTH_3)',
     'O*NET: High Achievement',
-    'Hours Worked / Week',
-    'Finds Life Routine',
+    'Hours Worked / Week (HRS1)',
+    'Finds Life Routine (LIFE_2)',
     'O*NET: High Independence',
-    'Never Married',
-    'Pretty Happy (vs. Very Happy)',
-    'Generally Not Too Happy',
+    'Never Married (MARITAL_5)',
+    'Pretty Happy (vs. Very Happy) (HAPPY_2)',
+    'Generally Not Too Happy (HAPPY_3)',
     'Age (Years)'
 ]
 rf_imps = [0.0233, 0.0264, 0.0284, 0.0427, 0.0543, 0.0677, 0.0695, 0.0785, 0.1199, 0.1611]

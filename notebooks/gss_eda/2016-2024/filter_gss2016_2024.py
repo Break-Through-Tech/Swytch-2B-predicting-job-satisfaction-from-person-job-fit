@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 # Define paths relative to the project root
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "gss7224_r3a.dta"
 INTERIM_DATA_DIR = PROJECT_ROOT / "data" / "interim"
 OUTPUT_FILE_PATH = INTERIM_DATA_DIR / "gss_2016_2024_all_cols.parquet"

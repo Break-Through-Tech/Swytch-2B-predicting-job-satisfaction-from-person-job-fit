@@ -1,9 +1,9 @@
-"""Demographic baselines for job satisfaction.
+"""Demographic baselines for job satisfaction, GSS 2018 and 2022.
 
-Compares logistic regression, a shallow decision tree, and a random forest
-on the same background features, split, and survey weights. The background
-set adds hours, weeks worked, and self-employment to demographics and
-earnings. O*NET scores stay in the modeling table for a separate comparison.
+Compares logistic regression, a shallow decision tree, a random forest, and
+LightGBM on demographics plus REALRINC, with the same split and survey weights.
+O*NET scores and the quality-of-work-life items stay in the modeling table
+for separate comparisons.
 Category encoding and imputation are fit on the training split. Logistic regression
 also standardizes numeric columns. WTSSNRPS is a survey weight, not a
 predictor. Test metrics are survey-weighted. Precision, recall, F1, and the
@@ -22,14 +22,15 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score
+from lightgbm import LGBMClassifier
+from sklearn.metrics import confusion_matrix, f1_score, log_loss, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 
-DATA_PATH = Path(__file__).resolve().parent / "merged_onet_gss_dataset.csv"
+DATA_PATH = Path(__file__).resolve().parent / "merged_onet_gss_2018_2022.csv"
 TARGET = "SATJOB_BINARY"
 WEIGHT = "WTSSNRPS"
 CATEGORICAL = ["SEX", "RACE", "MARITAL", "DEGREE", "REGION"]
@@ -219,7 +220,6 @@ def fit_and_report(
     low, high = metric_intervals(y_test, scores, w_test, threshold=threshold)
     matrix = confusion_table(y_test, scores, threshold)
     always_satisfied = np.unique(predicted_labels(scores, REFERENCE_THRESHOLD)).size == 1
-    estimator = pipeline.named_steps["model"]
 
     print(f"\n{label}")
     print(f"Train rows: {len(x_train):,}   Test rows: {len(x_test):,}")
@@ -240,18 +240,185 @@ def fit_and_report(
         f"(95% interval {low[2]:.3f} to {high[2]:.3f})"
     )
     print(f"Survey-weighted F1: {f1:.3f}  (95% interval {low[3]:.3f} to {high[3]:.3f})")
+    print(f"Survey-weighted test log loss: {weighted_log_loss(y_test, scores, w_test):.3f}")
     print("Confusion matrix on the test set (row counts):")
     print(matrix.to_string())
+    print_coefficient_ends(pipeline.named_steps["model"], feature_names(pipeline, numeric, categories))
+
+
+def print_coefficient_ends(estimator: BaseEstimator, names: list[str]) -> None:
+    """Largest positive and negative logistic coefficients.
+
+    Numeric inputs are standardized, so those coefficients are per standard
+    deviation. Category coefficients are versus the dropped reference level.
+    """
+    if not hasattr(estimator, "coef_"):
+        return
+    effects = (
+        pd.DataFrame({"Feature": names, "Coefficient": estimator.coef_.ravel()})
+        .sort_values("Coefficient", ascending=False)
+        .reset_index(drop=True)
+    )
+    print("Top 5 positive coefficients:")
+    print(effects.head(5).to_string(index=False, float_format=lambda value: f"{value:.3f}"))
+    print("Top 5 negative coefficients:")
+    print(effects.tail(5).to_string(index=False, float_format=lambda value: f"{value:.3f}"))
+
+
+def weighted_log_loss(y_true: np.ndarray, scores: np.ndarray, weights: np.ndarray) -> float:
+    """Survey-weighted log loss. Lower means the predicted probabilities fit better."""
+    return float(log_loss(y_true, scores, sample_weight=weights))
+
+
+def top_drivers(estimator: BaseEstimator, names: list[str]) -> tuple[str, pd.DataFrame]:
+    """Five features that move the prediction most in this fitted model."""
     if hasattr(estimator, "coef_"):
         coefficients = estimator.coef_.ravel()
-        names = feature_names(pipeline, numeric, categories)
         effects = (
-            pd.DataFrame({"feature": names, "log_odds": coefficients, "odds_ratio": np.exp(coefficients)})
+            pd.DataFrame(
+                {
+                    "feature": names,
+                    "log_odds": coefficients,
+                    "odds_ratio": np.exp(coefficients),
+                }
+            )
             .sort_values("log_odds", key=np.abs, ascending=False)
+            .head(5)
             .reset_index(drop=True)
         )
-        print("Largest coefficients, versus the dropped reference level:")
-        print(effects.head(8).to_string(index=False, float_format=lambda value: f"{value:.3f}"))
+        return "Top 5 drivers by absolute log odds, versus the dropped reference level:", effects
+    importance = np.asarray(estimator.feature_importances_, dtype=float)
+    total = float(importance.sum())
+    share = importance / total if total else np.zeros_like(importance)
+    effects = (
+        pd.DataFrame({"feature": names, "importance": importance, "share": share})
+        .sort_values("importance", ascending=False)
+        .head(5)
+        .reset_index(drop=True)
+    )
+    return "Top 5 drivers by feature importance:", effects
+
+
+LEVEL_NAMES = {
+    "SEX": {"1": "male", "2": "female"},
+    "RACE": {"1": "white", "2": "black", "3": "other"},
+    "MARITAL": {
+        "1": "married",
+        "2": "widowed",
+        "3": "divorced",
+        "4": "separated",
+        "5": "never married",
+    },
+    "DEGREE": {
+        "0": "less than high school",
+        "1": "high school",
+        "2": "junior college",
+        "3": "bachelor",
+        "4": "graduate",
+    },
+    "REGION": {
+        "1": "New England",
+        "2": "Middle Atlantic",
+        "3": "East North Central",
+        "4": "West North Central",
+        "5": "South Atlantic",
+        "6": "East South Central",
+        "7": "West South Central",
+        "8": "Mountain",
+        "9": "Pacific",
+    },
+}
+
+
+def level_name(column: str, code: object) -> str:
+    key = str(code).strip()
+    if key.endswith(".0"):
+        key = key[:-2]
+    return LEVEL_NAMES.get(column, {}).get(key, key)
+
+
+def weighted_correlation(x: np.ndarray, y: np.ndarray, weights: np.ndarray) -> float:
+    """Survey-weighted Pearson correlation. Rows with a missing value are dropped."""
+    valid = np.isfinite(x) & np.isfinite(y) & np.isfinite(weights) & (weights > 0)
+    x = x[valid]
+    y = y[valid]
+    weights = weights[valid]
+    weights = weights / weights.sum()
+    x_mean = float(np.sum(weights * x))
+    y_mean = float(np.sum(weights * y))
+    covariance = float(np.sum(weights * (x - x_mean) * (y - y_mean)))
+    x_scale = float(np.sqrt(np.sum(weights * (x - x_mean) ** 2)))
+    y_scale = float(np.sqrt(np.sum(weights * (y - y_mean) ** 2)))
+    if x_scale == 0 or y_scale == 0:
+        return float("nan")
+    return covariance / (x_scale * y_scale)
+
+
+def satisfaction_associations(
+    frame: pd.DataFrame,
+    numeric: list[str],
+    categorical: list[str],
+) -> pd.DataFrame:
+    """How strongly each original variable tracks SATJOB_BINARY.
+
+    Numeric variables use a signed survey-weighted correlation. A categorical
+    variable is summarized by the survey-weighted correlation between
+    satisfaction and that category's satisfaction rate, so nominal codes are
+    not treated as a numeric scale. Both are on the correlation scale.
+    """
+    outcome = frame[TARGET].to_numpy(dtype=float)
+    weights = frame[WEIGHT].to_numpy(dtype=float)
+    rows = []
+    for column in numeric:
+        values = pd.to_numeric(frame[column], errors="coerce").to_numpy(dtype=float)
+        association = weighted_correlation(values, outcome, weights)
+        rows.append(
+            {
+                "variable": column,
+                "association": association,
+                "detail": "higher values go with higher satisfaction" if association >= 0 else "higher values go with lower satisfaction",
+            }
+        )
+    for column in categorical:
+        valid = frame[column].notna() & np.isfinite(outcome) & np.isfinite(weights) & (weights > 0)
+        subset = pd.DataFrame(
+            {
+                "level": frame.loc[valid, column].map(lambda code: level_name(column, code)),
+                "outcome": outcome[valid.to_numpy()],
+                "weight": weights[valid.to_numpy()],
+            }
+        )
+        rates = subset.groupby("level", sort=False).apply(
+            lambda group: float(np.average(group["outcome"], weights=group["weight"])),
+            include_groups=False,
+        )
+        score = subset["level"].map(rates).to_numpy(dtype=float)
+        association = weighted_correlation(score, subset["outcome"].to_numpy(), subset["weight"].to_numpy())
+        low = rates.idxmin()
+        high = rates.idxmax()
+        rows.append(
+            {
+                "variable": column,
+                "association": association,
+                "detail": f"satisfied share {rates[low]:.3f} for {low}, {rates[high]:.3f} for {high}",
+            }
+        )
+    ranked = pd.DataFrame(rows)
+    ranked["absolute_association"] = ranked["association"].abs()
+    return ranked.sort_values("absolute_association", ascending=False).reset_index(drop=True)
+
+
+def lightgbm_model() -> LGBMClassifier:
+    """Fixed booster settings, aligned with the forest's tree count and leaf size."""
+    return LGBMClassifier(
+        n_estimators=200,
+        learning_rate=0.05,
+        min_child_samples=20,
+        importance_type="gain",
+        class_weight="balanced",
+        random_state=RANDOM_STATE,
+        verbosity=-1,
+    )
 
 
 def baseline_models() -> list[tuple[str, BaseEstimator, bool]]:
@@ -277,29 +444,29 @@ def main() -> None:
     print("Reference levels dropped by one-hot encoding:")
     for column, level in REFERENCE_LEVELS.items():
         print(f"  {column}: {level}")
-    print("Decision tree: max depth 4, at least 50 training rows per leaf.")
+    print("Decision tree: max depth 4, at least 20 training rows per leaf.")
     print("Random forest: 200 trees, at least 20 training rows per leaf.")
-    work_situation = NUMERIC + [INCOME, HOURS, WEEKS_WORKED]
-    work_categories = CATEGORICAL + [SELF_EMPLOYED]
-    feature_sets = [
-        ("Demographics", NUMERIC, CATEGORICAL),
-        ("Demographics plus own earnings (REALRINC)", NUMERIC + [INCOME], CATEGORICAL),
-        (
-            "Demographics, earnings, hours, weeks worked, and self-employment",
-            work_situation,
-            work_categories,
-        ),
-    ]
-    for model_name, model, scale in baseline_models():
-        for feature_label, numeric, categorical in feature_sets:
-            fit_and_report(
-                frame,
-                f"{model_name}: {feature_label}",
-                numeric,
-                model,
-                scale,
-                categorical,
-            )
+    print("LightGBM: 200 trees, learning rate 0.05, at least 20 training rows per leaf.")
+    print("Baseline features: demographics plus REALRINC.")
+    numeric = NUMERIC + [INCOME]
+    associations = satisfaction_associations(frame, numeric, CATEGORICAL)
+    print("Survey-weighted association with job satisfaction, strongest first:")
+    print(
+        associations.head(5)[["variable", "association", "detail"]].to_string(
+            index=False,
+            float_format=lambda value: f"{value:.3f}",
+        )
+    )
+    models = baseline_models() + [("LightGBM", lightgbm_model(), False)]
+    for model_name, model, scale in models:
+        fit_and_report(
+            frame,
+            f"{model_name}: Demographics plus own earnings (REALRINC)",
+            numeric,
+            model,
+            scale,
+            CATEGORICAL,
+        )
 
 
 if __name__ == "__main__":
